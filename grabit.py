@@ -4,6 +4,8 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup as bs
 import requests
 import argparse
+import re
+import pprint
 
 def openURL(file_name, url):
     u = urllib.request.urlopen(url)
@@ -21,7 +23,7 @@ def openURL(file_name, url):
 
         file_size_dl += len(buffer)
         f.write(buffer)
-        status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
+        status = r"%10d  [%3.2f%%]" % (file_size_dl/(1024*1024), file_size_dl * 100. / file_size)
         status = status + chr(8)*(len(status)+1)
         print(status)
     f.close()
@@ -31,7 +33,8 @@ def processURL(url, file_type):
         file_name = url.split('/')[-1]
         openURL(file_name, url)
     else:
-        dirCrawler(url, file_type)
+        #dirCrawler(url, file_type)
+        getHyperlinks(url, file_type)
 
 def dirCrawler(url, file_type):
     #path = url.split('/')[-2]
@@ -42,13 +45,44 @@ def dirCrawler(url, file_type):
             for file_ext in file_type:
                 openURL(_file_name +"."+ file_ext, url)
 
+def removeQueryString(link):
+    link.get('href')
+    url = urlparse.urlparse(link)
+    query_removed = url.scheme + "://" + url.netloc + url.path
+    return query_removed
+
+
 def getHyperlinks(url, file_type):
     page = urllib.request.urlopen(url)
-    soup = bs(page)
+    #import pdb;pdb.set_trace()
+    soup = bs(page, "html.parser")
+    #print(soup.prettify())
     links = []
-
-    for link in soup.find_all('a', attrs={'href': re.compile("^http://")}):
-        links.append(link.get('href'))
+    link = ''
+    if file_type[0] == 'mp3':
+        for link in soup.find_all('a', attrs={'href': re.compile("^http://")}):
+            #if link[-3:-1] == ''
+            links.append(link.get('href'))
+    if file_type[0] == 'mp4':
+        for link in soup.find_all('video'):
+            links.append(link.get('src' or 'href'))
+    if file_type[0] == 'pdf':
+        for link in soup.find_all('a', attrs={'href': re.compile("^http://")}):
+            links.append(link.get('href' or 'src'))
+    if file_type[0] == 'jpg':
+        for link in soup.find_all('img', attrs={'src': re.compile("^https://")}):
+            links.append(link.get('src'))
+    #for item in links:
+    #    file_num = 0
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(links)
+    
+    for link_url in links:
+        
+        pp.pprint(link_url)
+    sel_file = input('--choose from the above links')
+    file_name = sel_file.split('/')[-1]
+    openURL(link_url, file_name)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="download files")
