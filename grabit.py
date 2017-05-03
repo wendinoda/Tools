@@ -12,7 +12,7 @@ def openURL(file_name, url):
     f = open(file_name, 'wb')
     #meta = u.info()
     file_size = int(u.getheader("Content-Length")[0])
-    print("Downloading: %s Bytes: %s" % (file_name, file_size))
+    print("Downloading: %s MegaBytes: %s" % (file_name, file_size))
 
     file_size_dl = 0
     block_sz = 8192
@@ -23,9 +23,9 @@ def openURL(file_name, url):
 
         file_size_dl += len(buffer)
         f.write(buffer)
-        status = r"%10d  [%3.2f%%]" % (file_size_dl/(1024*1024), file_size_dl * 100. / file_size)
+        status = r"%10d  [%3.2f%%]" % (file_size_dl/(1024*1024), (file_size_dl * 100. / file_size)/(1024*1024))
         status = status + chr(8)*(len(status)+1)
-        print(status)
+        print(status, end="\r")
     f.close()
 
 def processURL(url, file_type):
@@ -76,9 +76,9 @@ def getHyperlinks(url, file_type):
     #    file_num = 0
     pp = pprint.PrettyPrinter(indent=4)
     pp.pprint(links)
-    
+
     for link_url in links:
-        
+
         pp.pprint(link_url)
     sel_file = input('--choose from the above links')
     file_name = sel_file.split('/')[-1]
